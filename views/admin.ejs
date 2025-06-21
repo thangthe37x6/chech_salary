@@ -1,0 +1,122 @@
+<%- include('layout.ejs') %>
+<div class="w-full flex justify-end px-4 py-2">
+  <form action="/logout" method="POST">
+    <button type="submit"
+      class="bg-red-500 hover:bg-red-600 text-white text-xs sm:text-sm px-3 py-1 sm:px-4 sm:py-2 rounded-lg font-medium transition">
+      🔓 Đăng xuất
+    </button>
+  </form>
+</div>
+  <div class="bg-gray-100 min-h-screen p-4">
+    <div class="max-w-5xl mx-auto bg-white p-8 rounded-2xl shadow-xl">
+      <div class="flex items-center justify-between mb-8">
+        <h2 class="text-3xl font-bold text-gray-800">📊 Admin Dashboard</h2>
+
+      </div>
+
+      <% if (message) { %>
+        <div class="mb-6 text-center text-red-600 font-semibold">
+          <%= message %>
+        </div>
+        <% } %>
+
+          <!-- Import Excel -->
+          <form action="/import" method="POST" enctype="multipart/form-data" class="mb-10">
+            <div class="space-y-3">
+              <label for="excelFile" class="block text-sm font-medium text-gray-700">📥 chọn file dữ liệu
+                (.xlsx)</label>
+              <input type="file" id="excelFile" name="excelFile" accept=".xlsx" required
+                class="block w-full border border-gray-300 rounded-lg px-4 py-2 text-gray-700 focus:ring-2 focus:ring-blue-500" />
+            </div>
+            <button type="submit"
+              class="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-medium transition-all">
+              xác nhận
+            </button>
+          </form>
+
+    
+          <!-- Table -->
+          <div class="overflow-x-auto">
+            <table class="w-full table-auto border-collapse bg-white text-sm">
+              <thead>
+                <tr class="bg-gray-100 text-gray-700 uppercase tracking-wide text-xs">
+                  <th class="px-4 py-3 text-left">Họ và tên</th>
+                  <th class="px-4 py-3 text-left">Hoa hồng</th>
+                  <th class="px-4 py-3 text-left">khoản chi 1</th>
+                  <th class="px-4 py-3 text-left">khoản chi 2</th>
+                  <th class="px-4 py-3 text-left">khoản chi 3</th>
+                  <th class="px-4 py-3 text-left">khoản chi 4</th>
+                  <th class="px-4 py-3 text-left">khoản chi 5</th>
+                  <th class="px-4 py-3 text-left">khoản chi 6</th>
+                  <th class="px-4 py-3 text-left">Truy thu hoa hồng</th>
+                  <th class="px-4 py-3 text-left">Thưởng TCTy</th>
+                  <th class="px-4 py-3 text-left">Thưởng Cty</th>
+                  <th class="px-4 py-3 text-left">Thù lao</th>
+                  <th class="px-4 py-3 text-left">Truy thu thù lao</th>
+                  <th class="px-4 py-3 text-left">Thưởng TCTy.1</th>
+                  <th class="px-4 py-3 text-left">Thưởng Cty.1</th>
+                  <th class="px-4 py-3 text-left">Thuế</th>
+                  <th class="px-4 py-3 text-left font-bold">Thực chi</th>
+                </tr>
+              </thead>
+              <tbody class="text-gray-700">
+                <% latestSalaries.forEach(s=> { %>
+                  <tr class="border-t hover:bg-gray-50 transition">
+                    <td class="px-4 py-3">
+                      <%= s.name %>
+                    </td>
+                    <td class="px-4 py-3">
+                      <%= s.commission?.toLocaleString() || 0 %>
+                    </td>
+                    <td class="px-4 py-3">
+                      <%= s.payout1?.toLocaleString() || 0 %>
+                    </td>
+                    <td class="px-4 py-3">
+                      <%= s.payout2?.toLocaleString() || 0 %>
+                    </td>
+                    <td class="px-4 py-3">
+                      <%= s.payout3?.toLocaleString() || 0 %>
+                    </td>
+                    <td class="px-4 py-3">
+                      <%= s.payout4?.toLocaleString() || 0 %>
+                    </td>
+                    <td class="px-4 py-3">
+                      <%= s.payout5?.toLocaleString() || 0 %>
+                    </td>
+                    <td class="px-4 py-3">
+                      <%= s.payout6?.toLocaleString() || 0 %>
+                    </td>
+                    <td class="px-4 py-3">
+                      <%= s.extracommission?.toLocaleString() || 0 %>
+                    </td>
+                    <td class="px-4 py-3">
+                      <%= s.ebonusTCTy?.toLocaleString() || 0 %>
+                    </td>
+                    <td class="px-4 py-3">
+                      <%= s.ebonusCT?.toLocaleString() || 0 %>
+                    </td>
+                    <td class="px-4 py-3">
+                      <%= s.Compensation?.toLocaleString() || 0 %>
+                    </td>
+                    <td class="px-4 py-3">
+                      <%= s.extrasalary?.toLocaleString() || 0 %>
+                    </td>
+                    <td class="px-4 py-3">
+                      <%= s.ebonusTCTy1?.toLocaleString() || 0 %>
+                    </td>
+                    <td class="px-4 py-3">
+                      <%= s.ebonusCT1?.toLocaleString() || 0 %>
+                    </td>
+                    <td class="px-4 py-3">
+                      <%= s.tax?.toLocaleString() || 0 %>
+                    </td>
+                    <td class="px-4 py-3 font-semibold text-green-700">
+                      <%= s.actualcost.toLocaleString() %>
+                    </td>
+                  </tr>
+                  <% }) %>
+              </tbody>
+            </table>
+          </div>
+    </div>
+  </div>
