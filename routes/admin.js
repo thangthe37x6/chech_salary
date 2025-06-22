@@ -6,68 +6,51 @@ import Salary from '../models/model_salary.js'
 import { authMiddleware, requireAdmin } from "../middleware/auth.js";
 import fs from 'fs'
 
-
 const upload = multer({ dest: 'public/uploads/' });
+routesAdmin.get('/admin',authMiddleware, requireAdmin, async (req, res) => {
+  res.render('admin', {message: null})
+})
 
-routesAdmin.get('/admin', async (req, res) => {
+routesAdmin.get('/admin/salary',authMiddleware, requireAdmin, async (req, res) => {
   try {
-    // 🔍 Tìm bản ghi lương mới nhất
-    const latest = await Salary
-      .findOne()
-      .sort({ 'payPeriod.year': -1, 'payPeriod.month': -1, 'payPeriod.batch': -1 })
-      .lean();
-
-    let latestSalaries = [];
-
-    if (latest?.payPeriod) {
-      const { year, month, batch } = latest.payPeriod;
-
-      // 📦 Lấy toàn bộ bảng lương thuộc đợt đó
-      const raw = await Salary.find({
-        'payPeriod.year': year,
-        'payPeriod.month': month,
-        'payPeriod.batch': batch
-      }).lean();
-
-      latestSalaries = raw.map(entry => {
-        const d = entry.salaryDetails;
-
-        return {
-          name: d.name,
-          commission: d.commission,
-          payout1: d.payout1,
-          payout2: d.payout2,
-          payout3: d.payout3,
-          payout4: d.payout4,
-          payout5: d.payout5,
-          payout6: d.payout6,
-          extracommission: d.extracommission,
-          ebonusTCTy: d.ebonusTCTy,
-          ebonusCT: d.ebonusCT,
-          Compensation: d.Compensation,
-          extrasalary: d.extrasalary,
-          ebonusTCTy1: d.ebonusTCTy1,
-          ebonusCT1: d.ebonusCT1,
-          tax: d.tax,
-          actualcost: d.actualcost,
-        };
-      });
+    const { month, year, batch } = req.query;
+    if (!month || !year || !batch) {
+      return res.status(400).json({ error: 'Thiếu dữ liệu' });
     }
 
-    res.render('admin', {
-      latestSalaries,
-      message: null
+    const salary = await Salary.find({
+      'payPeriod.month': +month,
+      'payPeriod.year': +year,
+      'payPeriod.batch': +batch,
     });
+
+    if (!salary) return res.json({ salary: null });
+
+    res.json({ salary });
   } catch (err) {
     console.error(err);
-    res.status(500).render('admin', {
-      latestSalaries: [],
-      message: 'Lỗi khi tải dữ liệu'
-    });
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+routesAdmin.get('/admin/pay-periods',authMiddleware, requireAdmin, async (req, res) => {
+  try {
+    const { month, year } = req.query;
+    if (!month || !year) {
+      return res.status(400).json({ error: 'Thiếu month hoặc year' });
+    }
+
+    const periods = await Salary.find({ 'payPeriod.month': +month, 'payPeriod.year': +year })
+                                .distinct('payPeriod.batch');
+
+    res.json(periods.sort((a, b) => a - b));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
-routesAdmin.post('/import', upload.single('excelFile'), async (req, res) => {
+
+routesAdmin.post('/import',authMiddleware, requireAdmin, upload.single('excelFile'), async (req, res) => {
   try {
     
     const now = new Date();
@@ -145,6 +128,19 @@ routesAdmin.post('/logout', (req, res) => {
   res.clearCookie('token'); // hoặc tên cookie chứa JWT bạn dùng
   res.redirect('/login');   // hoặc bất kỳ trang nào sau khi đăng xuất
 });
-
+routesAdmin.post('/admin/delete-salary',authMiddleware, requireAdmin, async (req, res) => {
+  const { month, year, batch } = req.body;
+  try {
+    await Salary.deleteMany({
+      'payPeriod.month': parseInt(month),
+      'payPeriod.year': parseInt(year),
+      'payPeriod.batch': parseInt(batch),
+    });
+    res.redirect('/admin?message=Đã xóa bảng lương đợt đó');
+  } catch (error) {
+    console.error(error);
+    res.redirect('/admin?message=Lỗi khi xóa bảng lương');
+  }
+});
 
 export default routesAdmin;
