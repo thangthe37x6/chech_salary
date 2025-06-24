@@ -5,8 +5,6 @@ import Salary from '../models/model_salary.js'
 
 routesUser.get('/user',authMiddleware, (req, res) => {
   res.render('user');
-
-
 });
 routesUser.get('/api/pay-periods',authMiddleware, async (req, res) => {
   try {
@@ -26,6 +24,7 @@ routesUser.get('/api/pay-periods',authMiddleware, async (req, res) => {
 });
 routesUser.get('/api/salary',authMiddleware, async (req, res) => {
   try {
+    const username_ = req.user.username;
     const { month, year, batch, name } = req.query;
     if (!month || !year || !batch || !name) {
       return res.status(400).json({ error: 'Thiếu dữ liệu' });
@@ -41,9 +40,9 @@ routesUser.get('/api/salary',authMiddleware, async (req, res) => {
       'salaryDetails.Họ và tên': lowerName  // 👈 Tên cột chính xác từ Excel
     });
 
-    if (!salary) return res.json({ salary: null });
+    if (!salary) return res.json({ salary: null});
 
-    res.json({ salary });
+    res.json({ salary , username:username_ });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });

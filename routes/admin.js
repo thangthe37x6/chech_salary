@@ -68,7 +68,7 @@ routesAdmin.post('/import',authMiddleware, requireAdmin, upload.single('excelFil
     const [header, ...rows] = data;
 
     const nameIndex = header.findIndex(h => typeof h === 'string' && h.trim().toLowerCase() === 'họ và tên');
-    if (nameIndex === -1) throw new Error("Không tìm thấy cột 'Tên' trong file Excel");
+    if (nameIndex === -1) throw new Error("Không tìm thấy cột 'họ và tên' trong file Excel");
 
     const docs = [];
 
@@ -85,7 +85,7 @@ routesAdmin.post('/import',authMiddleware, requireAdmin, upload.single('excelFil
         const cleanedKey = key.trim();
 
         if (i === nameIndex && typeof row[i] === 'string') {
-          salaryDetails[cleanedKey] = row[i].trim().toLowerCase(); // 👈 lowercase TÊN
+          salaryDetails[cleanedKey] = row[i].trim().toLowerCase(); 
         } else {
           salaryDetails[cleanedKey] = typeof row[i] === 'number' ? Math.round(row[i]) : row[i];
         }

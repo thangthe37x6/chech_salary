@@ -102,16 +102,24 @@
       const s = data.salary.salaryDetails;
 
       // Tìm mã đại lý (tên cột có thể khác, bạn kiểm tra kỹ trong Excel)
-      const maDaiLy = s['Mã đại lý'] || s['ma dai ly'] || s['Mã ĐL'] || '';
-
+      const maDaiLy = (s['Mã đại lý'] || s['ma dai ly'] || s['Mã ĐL'] || '').toString().toUpperCase();
+      const thuchi = s['Thực Chi'] || s['THỰC CHI'] || s['thực chi'] || 0;
+      if (data.username.toUpperCase() !== maDaiLy){
+        el.innerHTML = `<div class="text-red-500">Bạn chỉ được xem thông tin của bạn thôi.</div>`;
+        return;
+      }
       // Chỉ lấy các cột số có giá trị khác 0 (không bao gồm mã đại lý)
-      const items = Object.entries(s)
-        .filter(([key, val]) => typeof val === 'number' && val !== 0);
+      const items = Object.entries(s).filter(([key, val]) =>
+        typeof val === 'number' &&
+        val !== 0 &&
+        !['Thực Chi', 'THỰC CHI', 'thực chi', 'Mã đại lý','mã đại lý','Mã Đại Lý', 'ma dai ly', 'Mã ĐL'].includes(key)
+      );
 
       let html = `
     <div class="space-y-4">
       <h3 class="text-lg font-bold mb-2">📋 Chi tiết các khoản</h3>
   `;
+
 
       // Hiển thị mã đại lý nếu có
       if (maDaiLy) {
@@ -122,7 +130,11 @@
       </div>
     `;
       }
-
+      html += `
+    <div class="flex justify-between bg-yellow-50 border border-yellow-300 rounded-lg px-4 py-2 text-sm">
+      <span class="font-medium text-yellow-800">Thực chi</span>
+      <span class="font-bold text-yellow-700">${(+thuchi).toLocaleString()}₫</span>
+    </div>`;
       // Hiển thị các khoản
       items.forEach(([key, val]) => {
         html += `

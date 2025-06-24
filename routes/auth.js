@@ -17,14 +17,14 @@ router.get('/register', (req, res) => {
 });
 
 router.post('/register', async (req, res) => {
-  const { username, password } = req.body;
+  const { username,email,  password } = req.body;
   try {
     const existingUser = await User.findOne({ username });
     if (existingUser) {
       return res.render('register', { message: 'Username already exists' });
     }
 
-    const user = new User({ username, password });
+    const user = new User({ username, email, password });
     await user.save();
 
     res.render('login', { message: 'Registration successful! Please login.' });
@@ -67,14 +67,17 @@ router.get('/forgot', (req, res) => {
 });
 
 router.post('/forgot', async (req, res) => {
-  const { username, newPassword } = req.body;
+  const { username,email, newPassword } = req.body;
 
   try {
     const user = await User.findOne({ username });
-
+    
     if (!user) {
       return res.render('forgot', { message: "Không tìm thấy tên người dùng này." });
     }
+    if (user.email !== email) {
+      res.render('forgot', { message: "bạn cần nhập đúng email đăng ký tài khoản" });
+    } 
     user.password = newPassword;
     await user.save();
 
