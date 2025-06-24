@@ -3,12 +3,12 @@ const routesUser = express.Router()
 import { authMiddleware } from "../middleware/auth.js";
 import Salary from '../models/model_salary.js'
 
-routesUser.get('/user', (req, res) => {
+routesUser.get('/user',authMiddleware, (req, res) => {
   res.render('user');
 
 
 });
-routesUser.get('/api/pay-periods', async (req, res) => {
+routesUser.get('/api/pay-periods',authMiddleware, async (req, res) => {
   try {
     const { month, year } = req.query;
     if (!month || !year) {
@@ -24,7 +24,7 @@ routesUser.get('/api/pay-periods', async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 });
-routesUser.get('/api/salary', async (req, res) => {
+routesUser.get('/api/salary',authMiddleware, async (req, res) => {
   try {
     const { month, year, batch, name } = req.query;
     if (!month || !year || !batch || !name) {
