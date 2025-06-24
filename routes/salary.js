@@ -3,12 +3,12 @@ const routesUser = express.Router()
 import { authMiddleware } from "../middleware/auth.js";
 import Salary from '../models/model_salary.js'
 
-routesUser.get('/user',authMiddleware, (req, res) => {
-  res.render('user'); 
+routesUser.get('/user', (req, res) => {
+  res.render('user');
 
-  
+
 });
-routesUser.get('/api/pay-periods',authMiddleware, async (req, res) => {
+routesUser.get('/api/pay-periods', async (req, res) => {
   try {
     const { month, year } = req.query;
     if (!month || !year) {
@@ -16,7 +16,7 @@ routesUser.get('/api/pay-periods',authMiddleware, async (req, res) => {
     }
 
     const periods = await Salary.find({ 'payPeriod.month': +month, 'payPeriod.year': +year })
-                                .distinct('payPeriod.batch');
+      .distinct('payPeriod.batch');
 
     res.json(periods.sort((a, b) => a - b));
   } catch (err) {
@@ -24,20 +24,21 @@ routesUser.get('/api/pay-periods',authMiddleware, async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 });
-
-// Truy vấn lương theo tên và kỳ lương
-routesUser.get('/api/salary',authMiddleware, async (req, res) => {
+routesUser.get('/api/salary', async (req, res) => {
   try {
     const { month, year, batch, name } = req.query;
     if (!month || !year || !batch || !name) {
       return res.status(400).json({ error: 'Thiếu dữ liệu' });
     }
 
+    const lowerName = name.trim().toLowerCase();
+
+    // Tìm trực tiếp trong MongoDB theo tên lowercase
     const salary = await Salary.findOne({
       'payPeriod.month': +month,
       'payPeriod.year': +year,
       'payPeriod.batch': +batch,
-      'salaryDetails.name': name.trim()
+      'salaryDetails.Họ và tên': lowerName  // 👈 Tên cột chính xác từ Excel
     });
 
     if (!salary) return res.json({ salary: null });
@@ -48,6 +49,7 @@ routesUser.get('/api/salary',authMiddleware, async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 });
+
 routesUser.post('/logout', (req, res) => {
   res.clearCookie('token'); // hoặc tên cookie chứa JWT bạn dùng
   res.redirect('/login');   // hoặc bất kỳ trang nào sau khi đăng xuất

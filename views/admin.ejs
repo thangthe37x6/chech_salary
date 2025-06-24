@@ -93,91 +93,73 @@
     updateSalary();
   }
 
-  async function updateSalary() {
-    const month = document.getElementById('month').value;
-    const year = document.getElementById('year').value;
-    const batch = document.getElementById('batch').value;
+ async function updateSalary() {
+  const month = document.getElementById('month').value;
+  const year = document.getElementById('year').value;
+  const batch = document.getElementById('batch').value;
 
-    if (!month || !year || !batch) {
-      document.getElementById('salary-result').innerHTML = '';
-      return;
-    }
+  if (!month || !year || !batch) {
+    document.getElementById('salary-result').innerHTML = '';
+    return;
+  }
 
-    const res = await fetch(`/admin/salary?month=${month}&year=${year}&batch=${batch}`);
-    const data = await res.json();
-    const salaries = data.salary || [];
+  const res = await fetch(`/admin/salary?month=${month}&year=${year}&batch=${batch}`);
+  const data = await res.json();
+  const salaries = data.salary || [];
 
-    if (salaries.length === 0) {
-      document.getElementById('salary-result').innerHTML = `<div class="text-red-500">Không có dữ liệu bảng lương</div>`;
-      return;
-    }
+  if (salaries.length === 0) {
+    document.getElementById('salary-result').innerHTML = `<div class="text-red-500">Không có dữ liệu bảng lương</div>`;
+    return;
+  }
 
-    let html = `
+  // 🔍 Lấy tất cả key của salaryDetails (bao gồm Tên, Hoa hồng, v.v.)
+  const allKeys = new Set();
+  salaries.forEach(d => {
+    const keys = Object.keys(d.salaryDetails || {});
+    keys.forEach(k => allKeys.add(k));
+  });
+
+  const sortedKeys = [...[...allKeys].filter(k => k !== 'Tên')];
+
+  let html = `
     <div class="flex justify-between items-center mb-4">
-  <h3 class="text-lg sm:text-xl font-bold text-gray-800">Bảng lương tháng ${month}, đợt ${batch}, năm ${year}</h3>
-  <form action="/admin/delete-salary" method="POST" onsubmit="return confirm('Bạn chắc chắn muốn xóa bảng lương đợt này?')">
-    <input type="hidden" name="month" value="${month}">
-    <input type="hidden" name="year" value="${year}">
-    <input type="hidden" name="batch" value="${batch}">
-    <button type="submit"
-      class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium">
-      🗑️ Xóa đợt
-    </button>
-  </form>
-</div>
+      <h3 class="text-lg sm:text-xl font-bold text-gray-800">Bảng lương tháng ${month}, đợt ${batch}, năm ${year}</h3>
+      <form action="/admin/delete-salary" method="POST" onsubmit="return confirm('Bạn chắc chắn muốn xóa bảng lương đợt này?')">
+        <input type="hidden" name="month" value="${month}">
+        <input type="hidden" name="year" value="${year}">
+        <input type="hidden" name="batch" value="${batch}">
+        <button type="submit" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium">
+          🗑️ Xóa đợt
+        </button>
+      </form>
+    </div>
+    <div class="overflow-x-auto">
     <table class="w-full table-auto border-collapse bg-white text-sm min-w-[1000px]">
       <thead>
         <tr class="bg-gray-100 text-gray-700 uppercase tracking-wide text-xs">
-          <th class="px-4 py-3 text-left">Họ và tên</th>
-          <th class="px-4 py-3 text-left">Hoa hồng</th>
-          <th class="px-4 py-3 text-left">Khoản chi 1</th>
-          <th class="px-4 py-3 text-left">Khoản chi 2</th>
-          <th class="px-4 py-3 text-left">Khoản chi 3</th>
-          <th class="px-4 py-3 text-left">Khoản chi 4</th>
-          <th class="px-4 py-3 text-left">Khoản chi 5</th>
-          <th class="px-4 py-3 text-left">Khoản chi 6</th>
-          <th class="px-4 py-3 text-left">Truy thu hoa hồng</th>
-          <th class="px-4 py-3 text-left">Thưởng TCTy</th>
-          <th class="px-4 py-3 text-left">Thưởng Cty</th>
-          <th class="px-4 py-3 text-left">Thù lao</th>
-          <th class="px-4 py-3 text-left">Truy thu thù lao</th>
-          <th class="px-4 py-3 text-left">Thưởng TCTy.1</th>
-          <th class="px-4 py-3 text-left">Thưởng Cty.1</th>
-          <th class="px-4 py-3 text-left">Thuế</th>
-          <th class="px-4 py-3 text-left font-bold">Thực chi</th>
-        </tr>
-      </thead>
-      <tbody class="text-gray-700">
-    `;
-   
-    salaries.forEach(d => {
-      const s = d.salaryDetails
-      html += `
-        <tr class="border-t hover:bg-gray-50 transition">
-          <td class="px-4 py-3">${s.name || ''}</td>
-          <td class="px-4 py-3">${(s.commission || 0).toLocaleString()}</td>
-          <td class="px-4 py-3">${(s.payout1 || 0).toLocaleString()}</td>
-          <td class="px-4 py-3">${(s.payout2 || 0).toLocaleString()}</td>
-          <td class="px-4 py-3">${(s.payout3 || 0).toLocaleString()}</td>
-          <td class="px-4 py-3">${(s.payout4 || 0).toLocaleString()}</td>
-          <td class="px-4 py-3">${(s.payout5 || 0).toLocaleString()}</td>
-          <td class="px-4 py-3">${(s.payout6 || 0).toLocaleString()}</td>
-          <td class="px-4 py-3">${(s.extracommission || 0).toLocaleString()}</td>
-          <td class="px-4 py-3">${(s.ebonusTCTy || 0).toLocaleString()}</td>
-          <td class="px-4 py-3">${(s.ebonusCT || 0).toLocaleString()}</td>
-          <td class="px-4 py-3">${(s.compensation || 0).toLocaleString()}</td>
-          <td class="px-4 py-3">${(s.extrasalary || 0).toLocaleString()}</td>
-          <td class="px-4 py-3">${(s.ebonusTCTy1 || 0).toLocaleString()}</td>
-          <td class="px-4 py-3">${(s.ebonusCT1 || 0).toLocaleString()}</td>
-          <td class="px-4 py-3">${(s.tax || 0).toLocaleString()}</td>
-          <td class="px-4 py-3 font-semibold text-green-700">${(s.actualcost || 0).toLocaleString()}</td>
-        </tr>
-      `;
-    });
+  `;
 
-    html += `</tbody></table>`;
-    document.getElementById('salary-result').innerHTML = html;
-  }
+  sortedKeys.forEach(key => {
+    html += `<th class="px-4 py-3 text-left">${key}</th>`;
+  });
+
+  html += `</tr></thead><tbody class="text-gray-700">`;
+
+  salaries.forEach(d => {
+    const s = d.salaryDetails || {};
+    html += `<tr class="border-t hover:bg-gray-50 transition">`;
+    sortedKeys.forEach(key => {
+      const val = s[key];
+      const displayVal = typeof val === 'number' ? val.toLocaleString() : (val || '');
+      const style = (key.toLowerCase().includes('thực chi') || key.toLowerCase().includes('actualcost')) ? 'font-semibold text-green-700' : '';
+      html += `<td class="px-4 py-3 ${style}">${displayVal}</td>`;
+    });
+    html += `</tr>`;
+  });
+
+  html += `</tbody></table></div>`;
+  document.getElementById('salary-result').innerHTML = html;
+}
 
   window.addEventListener('DOMContentLoaded', updateBatchesAndSalary);
 </script>

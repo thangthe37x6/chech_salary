@@ -7,11 +7,11 @@ import { authMiddleware, requireAdmin } from "../middleware/auth.js";
 import fs from 'fs'
 
 const upload = multer({ dest: 'public/uploads/' });
-routesAdmin.get('/admin',authMiddleware, requireAdmin, async (req, res) => {
-  res.render('admin', {message: null})
+routesAdmin.get('/admin', async (req, res) => {
+  res.render('admin', { message: null })
 })
 
-routesAdmin.get('/admin/salary',authMiddleware, requireAdmin, async (req, res) => {
+routesAdmin.get('/admin/salary', async (req, res) => {
   try {
     const { month, year, batch } = req.query;
     if (!month || !year || !batch) {
@@ -32,7 +32,7 @@ routesAdmin.get('/admin/salary',authMiddleware, requireAdmin, async (req, res) =
     res.status(500).json({ error: 'Server error' });
   }
 });
-routesAdmin.get('/admin/pay-periods',authMiddleware, requireAdmin, async (req, res) => {
+routesAdmin.get('/admin/pay-periods', async (req, res) => {
   try {
     const { month, year } = req.query;
     if (!month || !year) {
@@ -40,7 +40,7 @@ routesAdmin.get('/admin/pay-periods',authMiddleware, requireAdmin, async (req, r
     }
 
     const periods = await Salary.find({ 'payPeriod.month': +month, 'payPeriod.year': +year })
-                                .distinct('payPeriod.batch');
+      .distinct('payPeriod.batch');
 
     res.json(periods.sort((a, b) => a - b));
   } catch (err) {
@@ -49,10 +49,8 @@ routesAdmin.get('/admin/pay-periods',authMiddleware, requireAdmin, async (req, r
   }
 });
 
-
-routesAdmin.post('/import',authMiddleware, requireAdmin, upload.single('excelFile'), async (req, res) => {
+routesAdmin.post('/import', upload.single('excelFile'), async (req, res) => {
   try {
-    
     const now = new Date();
     const year = now.getFullYear();
     const month = now.getMonth() + 1;
@@ -68,42 +66,38 @@ routesAdmin.post('/import',authMiddleware, requireAdmin, upload.single('excelFil
     const sheet = workbook.sheet(0);
     const data = sheet.usedRange().value();
     const [header, ...rows] = data;
-    console.log("🧪 Tổng số dòng:", rows.length);
-    console.log("🧪 Dòng đầu tiên:", rows[0]);
+
+    const nameIndex = header.findIndex(h => typeof h === 'string' && h.trim().toLowerCase() === 'họ và tên');
+    if (nameIndex === -1) throw new Error("Không tìm thấy cột 'Tên' trong file Excel");
+
     const docs = [];
 
     for (const row of rows) {
-      const nameCell = row[1];
+      const nameCell = row[nameIndex];
       if (typeof nameCell !== 'string' || nameCell.trim() === '') continue;
 
-      const salaryDetails = {
-        name: nameCell.trim().toLowerCase(),
-        commission: Math.round(Number(row[2]) || 0),
-        payout1: Math.round(Number(row[3]) || 0),
-        payout2: Math.round(Number(row[4]) || 0),
-        payout3: Math.round(Number(row[5]) || 0),
-        payout4: Math.round(Number(row[6]) || 0),
-        payout5: Math.round(Number(row[7]) || 0),
-        payout6: Math.round(Number(row[8]) || 0),
-        extracommission: Math.round(Number(row[9]) || 0),
-        ebonusTCTy: Math.round(Number(row[10]) || 0),
-        ebonusCT: Math.round(Number(row[11]) || 0),
-        compensation: Math.round(Number(row[12]) || 0),
-        extrasalary: Math.round(Number(row[13]) || 0),
-        ebonusTCTy1: Math.round(Number(row[14]) || 0),
-        ebonusCT1: Math.round(Number(row[15]) || 0),
-        tax: Math.round(Number(row[16]) || 0),
-        actualcost: Math.round(Number(row[17]) || 0),
-      };
-      console.log("🧪 salaryDetails:", salaryDetails);
+      const salaryDetails = {};
+
+      for (let i = 0; i < header.length; i++) {
+        const key = header[i];
+        if (typeof key !== 'string') continue;
+
+        const cleanedKey = key.trim();
+
+        if (i === nameIndex && typeof row[i] === 'string') {
+          salaryDetails[cleanedKey] = row[i].trim().toLowerCase(); // 👈 lowercase TÊN
+        } else {
+          salaryDetails[cleanedKey] = typeof row[i] === 'number' ? Math.round(row[i]) : row[i];
+        }
+      }
+
       docs.push({
         payPeriod: { year, month, batch },
         createdAt: now,
         salaryDetails
       });
-      console.log("🧪 Tổng số bản ghi chuẩn bị lưu:", docs.length);
     }
-   
+
     if (docs.length > 0) {
       await Salary.insertMany(docs);
     }
@@ -111,24 +105,24 @@ routesAdmin.post('/import',authMiddleware, requireAdmin, upload.single('excelFil
     if (fs.existsSync(req.file.path)) {
       fs.unlinkSync(req.file.path);
     }
+
     console.log("===> File upload:", req.file.path);
-    res.redirect("/admin")
+    res.redirect("/admin");
 
   } catch (error) {
     console.error(error);
-    res.status(500).status(500).render('admin', {
+    res.status(500).render('admin', {
       message: 'Lỗi khi tải dữ liệu',
       latestSalaries: []
-    });;
+    });
   }
-
 });
 
 routesAdmin.post('/logout', (req, res) => {
   res.clearCookie('token'); // hoặc tên cookie chứa JWT bạn dùng
   res.redirect('/login');   // hoặc bất kỳ trang nào sau khi đăng xuất
 });
-routesAdmin.post('/admin/delete-salary',authMiddleware, requireAdmin, async (req, res) => {
+routesAdmin.post('/admin/delete-salary', async (req, res) => {
   const { month, year, batch } = req.body;
   try {
     await Salary.deleteMany({

@@ -1,13 +1,13 @@
 <%- include('layout.ejs') %>
   <!-- Bộ lọc tìm kiếm -->
-<div class="w-full flex justify-end px-4 py-2">
-  <form action="/logout" method="POST">
-    <button type="submit"
-      class="bg-red-500 hover:bg-red-600 text-white text-xs sm:text-sm px-3 py-1 sm:px-4 sm:py-2 rounded-lg font-medium transition">
-      🔓 Đăng xuất
-    </button>
-  </form>
-</div>
+  <div class="w-full flex justify-end px-4 py-2">
+    <form action="/logout" method="POST">
+      <button type="submit"
+        class="bg-red-500 hover:bg-red-600 text-white text-xs sm:text-sm px-3 py-1 sm:px-4 sm:py-2 rounded-lg font-medium transition">
+        🔓 Đăng xuất
+      </button>
+    </form>
+  </div>
   <div class="max-w-4xl mx-auto bg-white rounded-xl p-4 space-y-4 mt-8 border">
 
     <!-- Hàng: Tháng / Năm / Đợt -->
@@ -78,94 +78,51 @@
       updateSalary();
     }
 
-    async function updateSalary() {
-      const month = document.getElementById('month').value;
-      const year = document.getElementById('year').value;
-      const batch = document.getElementById('batch').value;
-      const name = document.getElementById('name').value.toLowerCase();
+  async function updateSalary() {
+  const month = document.getElementById('month').value;
+  const year = document.getElementById('year').value;
+  const batch = document.getElementById('batch').value;
+  const name = document.getElementById('name').value.toLowerCase();
 
-      if (!month || !year || !batch || !name) {
-        document.getElementById('salary-result').innerHTML = '';
-        return;
-      }
+  if (!month || !year || !batch || !name) {
+    document.getElementById('salary-result').innerHTML = '';
+    return;
+  }
 
-      const res = await fetch(`/api/salary?month=${month}&year=${year}&batch=${batch}&name=${encodeURIComponent(name)}`);
-      const data = await res.json();
+  const res = await fetch(`/api/salary?month=${month}&year=${year}&batch=${batch}&name=${encodeURIComponent(name)}`);
+  const data = await res.json();
 
-      const el = document.getElementById('salary-result');
+  const el = document.getElementById('salary-result');
 
-      if (!data || !data.salary) {
-        el.innerHTML = `<div class="text-red-500">Không tìm thấy bảng lương</div>`;
-        return;
-      }
+  if (!data || !data.salary || !data.salary.salaryDetails) {
+    el.innerHTML = `<div class="text-red-500">Không tìm thấy bảng lương</div>`;
+    return;
+  }
 
-      const s = data.salary.salaryDetails;
+  const s = data.salary.salaryDetails;
 
-      el.innerHTML = `
-      <details class="border rounded-xl shadow bg-green-50 overflow-hidden">
-        <summary class="cursor-pointer px-4 py-4 bg-green-100 font-bold text-lg flex justify-between items-center">
-          <span>Tổng thu nhập đợt này</span>
-          <span class="text-green-700 text-xl font-bold">${(s.actualcost || 0).toLocaleString()}₫</span>
-        </summary>
-        <div class="px-4 py-3 text-gray-700 border-t text-sm flex justify-between">
-          <span>Khấu trừ</span>
-          <span class="text-red-500 font-semibold">-${(s.tax || 0).toLocaleString()}₫</span>
-        </div>
-      </details>
+  // Chỉ lấy các key-value có giá trị là số và khác 0
+  const items = Object.entries(s)
+    .filter(([key, val]) => typeof val === 'number' && val !== 0);
 
-      <div class="columns-1 sm:columns-2 gap-4 space-y-4 mt-4">
-        <details class="break-inside-avoid border rounded-xl shadow bg-white overflow-hidden">
-          <summary class="px-4 py-3 bg-blue-100 font-semibold flex justify-between items-center">
-            <span>Hoa hồng & truy thu</span>
-            <span class="text-green-600 font-bold">${((s.commission || 0) + (s.extracommission || 0)).toLocaleString()}₫</span>
-          </summary>
-          <div class="px-4 py-2 text-sm text-gray-700 border-t space-y-1">
-            <div class="flex justify-between"><span>Hoa hồng</span><span>${(s.commission || 0).toLocaleString()}₫</span></div>
-            <div class="flex justify-between"><span>Truy thu</span><span>${(s.extracommission || 0).toLocaleString()}₫</span></div>
-          </div>
-        </details>
+  // Hiển thị các giá trị gốc (không tính toán gì)
+  let html = `
+    <div class="space-y-3">
+      <h3 class="text-lg font-bold mb-2">📋 Chi tiết các khoản</h3>
+  `;
 
-        <details class="break-inside-avoid border rounded-xl shadow bg-white overflow-hidden">
-          <summary class="px-4 py-3 bg-blue-100 font-semibold flex justify-between items-center">
-            <span>Chính sách thù lao</span>
-            <span class="text-green-600 font-bold">${((s.compensation || 0) + (s.extrasalary || 0)).toLocaleString()}₫</span>
-          </summary>
-          <div class="px-4 py-2 text-sm text-gray-700 border-t space-y-1">
-            <div class="flex justify-between"><span>Chính sách</span><span>${(s.compensation || 0).toLocaleString()}₫</span></div>
-            <div class="flex justify-between"><span>Truy thu</span><span>${(s.extrasalary || 0).toLocaleString()}₫</span></div>
-          </div>
-        </details>
-
-        <details class="break-inside-avoid border rounded-xl shadow bg-white overflow-hidden">
-          <summary class="px-4 py-3 bg-blue-100 font-semibold flex justify-between items-center">
-            <span>Khen thưởng & hỗ trợ</span>
-            <span class="text-green-600 font-bold">${((s.ebonusTCTy || 0) + (s.ebonusCT || 0) + (s.ebonusTCTy1 || 0) + (s.ebonusCT1 || 0)).toLocaleString()}₫</span>
-          </summary>
-          <div class="px-4 py-2 text-sm text-gray-700 border-t space-y-1">
-            <div class="flex justify-between"><span>Khen thưởng</span><span>${(s.ebonusTCTy || 0).toLocaleString()}₫</span></div>
-            <div class="flex justify-between"><span>Hỗ trợ</span><span>${(s.ebonusCT || 0).toLocaleString()}₫</span></div>
-            <div class="flex justify-between"><span>Khen thưởng 1</span><span>${(s.ebonusTCTy1 || 0).toLocaleString()}₫</span></div>
-            <div class="flex justify-between"><span>Hỗ trợ 1</span><span>${(s.ebonusCT1 || 0).toLocaleString()}₫</span></div>
-          </div>
-        </details>
-
-        <details class="break-inside-avoid border rounded-xl shadow bg-white overflow-hidden">
-          <summary class="px-4 py-3 bg-blue-100 font-semibold flex justify-between items-center">
-            <span>Khoản chi</span>
-            <span class="text-red-500 font-bold">-${((s.payout1 || 0) + (s.payout2 || 0) + (s.payout3 || 0) + (s.payout4 || 0) + (s.payout5 || 0) + (s.payout6 || 0)).toLocaleString()}₫</span>
-          </summary>
-          <div class="px-4 py-2 text-sm text-gray-700 border-t space-y-1">
-            <div class="flex justify-between"><span>Chi 1</span><span>${(s.payout1 || 0).toLocaleString()}₫</span></div>
-            <div class="flex justify-between"><span>Chi 2</span><span>${(s.payout2 || 0).toLocaleString()}₫</span></div>
-            <div class="flex justify-between"><span>Chi 3</span><span>${(s.payout3 || 0).toLocaleString()}₫</span></div>
-            <div class="flex justify-between"><span>Chi 4</span><span>${(s.payout4 || 0).toLocaleString()}₫</span></div>
-            <div class="flex justify-between"><span>Chi 5</span><span>${(s.payout5 || 0).toLocaleString()}₫</span></div>
-            <div class="flex justify-between"><span>Chi 6</span><span>${(s.payout6 || 0).toLocaleString()}₫</span></div>
-          </div>
-        </details>
+  items.forEach(([key, val]) => {
+    html += `
+      <div class="flex justify-between bg-white border rounded-lg shadow px-4 py-2 mt-4 text-sm">
+        <span class="font-medium">${key}</span>
+        <span class="font-semibold">${val.toLocaleString()}₫</span>
       </div>
-    `;
-    }
+    `;  
+  });
+
+  html += `</div>`;
+  el.innerHTML = html;
+}
 
     window.addEventListener('DOMContentLoaded', updateBatchesAndSalary);
   </script>
