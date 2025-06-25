@@ -50,11 +50,15 @@ routesAdmin.get('/admin/pay-periods',authMiddleware, requireAdmin,  async (req, 
     res.status(500).json({ error: 'Server error' });
   }
 });
-routesAdmin.post('/import',authMiddleware, requireAdmin, upload.single('excelFile'), async (req, res) => {
+routesAdmin.post('/import', authMiddleware, requireAdmin, upload.single('excelFile'), async (req, res) => {
   try {
     const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth() + 1;
+    const year = parseInt(req.body.year);
+    const month = parseInt(req.body.month);
+
+    if (isNaN(year) || isNaN(month) || month < 1 || month > 12) {
+      throw new Error("Dữ liệu tháng/năm không hợp lệ");
+    }
 
     const latestBatch = await Salary
       .findOne({ 'payPeriod.year': year, 'payPeriod.month': month })
@@ -71,9 +75,7 @@ routesAdmin.post('/import',authMiddleware, requireAdmin, upload.single('excelFil
     const nameIndex = header.findIndex(h => typeof h === 'string' && h.trim().toLowerCase() === 'họ và tên');
     if (nameIndex === -1) throw new Error("Không tìm thấy cột 'họ và tên' trong file Excel");
 
-    const sanitizeKey = (key) => {
-      return key.trim().replace(/\./g, '_'); // thay dấu chấm bằng dấu gạch dưới
-    };
+    const sanitizeKey = (key) => key.trim().replace(/\./g, '_');
 
     const docs = [];
 
@@ -87,14 +89,9 @@ routesAdmin.post('/import',authMiddleware, requireAdmin, upload.single('excelFil
         const key = header[i];
         if (typeof key !== 'string') continue;
 
-        const cleanedKey = sanitizeKey(key); // key an toàn không chứa dấu .
-
-        if (i === nameIndex && typeof row[i] === 'string') {
-          salaryDetails[cleanedKey] = row[i].trim().toLowerCase();
-        } else {
-          const value = row[i];
-          salaryDetails[cleanedKey] = (typeof value === 'number') ? Math.round(value) : (value ?? null);
-        }
+        const cleanedKey = sanitizeKey(key);
+        const value = row[i];
+        salaryDetails[cleanedKey] = (typeof value === 'number') ? Math.round(value) : (value ?? null);
       }
 
       docs.push({
