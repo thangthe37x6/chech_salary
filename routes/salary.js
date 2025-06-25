@@ -22,27 +22,29 @@ routesUser.get('/api/pay-periods',authMiddleware, async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 });
-routesUser.get('/api/salary',authMiddleware, async (req, res) => {
+routesUser.get('/api/salary', authMiddleware, async (req, res) => {
   try {
-    const username_ = req.user.username;
-    const { month, year, batch, name } = req.query;
-    if (!month || !year || !batch || !name) {
+    const username_ = req.user.username; // dùng làm mã đại lý
+    const { month, year, batch } = req.query;
+    if (!month || !year || !batch) {
       return res.status(400).json({ error: 'Thiếu dữ liệu' });
     }
 
-    const lowerName = name.trim().toLowerCase();
-
-    // Tìm trực tiếp trong MongoDB theo tên lowercase
+    // Tìm salary có chứa mã đại lý trùng username (không phân biệt hoa thường)
     const salary = await Salary.findOne({
       'payPeriod.month': +month,
       'payPeriod.year': +year,
       'payPeriod.batch': +batch,
-      'salaryDetails.Họ và tên': lowerName  // 👈 Tên cột chính xác từ Excel
+      $or: [
+        { 'salaryDetails.Mã đại lý': new RegExp(`^${username_}$`, 'i') },
+        { 'salaryDetails.ma dai ly': new RegExp(`^${username_}$`, 'i') },
+        { 'salaryDetails.Mã ĐL': new RegExp(`^${username_}$`, 'i') },
+      ]
     });
 
-    if (!salary) return res.json({ salary: null});
+    if (!salary) return res.json({ salary: null });
 
-    res.json({ salary , username:username_ });
+    res.json({ salary, username: username_ });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
