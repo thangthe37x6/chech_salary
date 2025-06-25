@@ -6,14 +6,14 @@ import Salary from '../models/model_salary.js'
 import Users from '../models/Users.js'
 import { authMiddleware, requireAdmin } from "../middleware/auth.js";
 import fs from 'fs'
-import { errorMonitor } from "events";
+
 
 const upload = multer({ dest: 'public/uploads/' });
-routesAdmin.get('/admin',  async (req, res) => {
+routesAdmin.get('/admin',authMiddleware, requireAdmin,  async (req, res) => {
   res.render('admin', { message: null })
 })
 
-routesAdmin.get('/admin/salary',  async (req, res) => {
+routesAdmin.get('/admin/salary',authMiddleware, requireAdmin,  async (req, res) => {
   try {
     const { month, year, batch } = req.query;
     if (!month || !year || !batch) {
@@ -34,7 +34,7 @@ routesAdmin.get('/admin/salary',  async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 });
-routesAdmin.get('/admin/pay-periods',  async (req, res) => {
+routesAdmin.get('/admin/pay-periods',authMiddleware, requireAdmin,  async (req, res) => {
   try {
     const { month, year } = req.query;
     if (!month || !year) {
@@ -50,7 +50,7 @@ routesAdmin.get('/admin/pay-periods',  async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 });
-routesAdmin.post('/import', upload.single('excelFile'), async (req, res) => {
+routesAdmin.post('/import',authMiddleware, requireAdmin, upload.single('excelFile'), async (req, res) => {
   try {
     const now = new Date();
     const year = now.getFullYear();
@@ -129,7 +129,7 @@ routesAdmin.post('/logout', (req, res) => {
   res.clearCookie('token'); // hoặc tên cookie chứa JWT bạn dùng
   res.redirect('/login');   // hoặc bất kỳ trang nào sau khi đăng xuất
 });
-routesAdmin.post('/admin/delete-salary',  async (req, res) => {
+routesAdmin.post('/admin/delete-salary',authMiddleware, requireAdmin,  async (req, res) => {
   const { month, year, batch } = req.body;
   try {
     await Salary.deleteMany({
