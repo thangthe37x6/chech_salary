@@ -3,15 +3,17 @@ const routesAdmin = express.Router();
 import multer from "multer";
 import XlsxPopulate from 'xlsx-populate';
 import Salary from '../models/model_salary.js'
+import Users from '../models/Users.js'
 import { authMiddleware, requireAdmin } from "../middleware/auth.js";
 import fs from 'fs'
+import { errorMonitor } from "events";
 
 const upload = multer({ dest: 'public/uploads/' });
-routesAdmin.get('/admin',authMiddleware, requireAdmin, async (req, res) => {
+routesAdmin.get('/admin', authMiddleware, requireAdmin, async (req, res) => {
   res.render('admin', { message: null })
 })
 
-routesAdmin.get('/admin/salary',authMiddleware, requireAdmin, async (req, res) => {
+routesAdmin.get('/admin/salary', authMiddleware, requireAdmin, async (req, res) => {
   try {
     const { month, year, batch } = req.query;
     if (!month || !year || !batch) {
@@ -32,7 +34,7 @@ routesAdmin.get('/admin/salary',authMiddleware, requireAdmin, async (req, res) =
     res.status(500).json({ error: 'Server error' });
   }
 });
-routesAdmin.get('/admin/pay-periods',authMiddleware, requireAdmin, async (req, res) => {
+routesAdmin.get('/admin/pay-periods', authMiddleware, requireAdmin, async (req, res) => {
   try {
     const { month, year } = req.query;
     if (!month || !year) {
@@ -49,7 +51,7 @@ routesAdmin.get('/admin/pay-periods',authMiddleware, requireAdmin, async (req, r
   }
 });
 
-routesAdmin.post('/import',authMiddleware, requireAdmin, upload.single('excelFile'), async (req, res) => {
+routesAdmin.post('/import', authMiddleware, requireAdmin, upload.single('excelFile'), async (req, res) => {
   try {
     const now = new Date();
     const year = now.getFullYear();
@@ -85,7 +87,7 @@ routesAdmin.post('/import',authMiddleware, requireAdmin, upload.single('excelFil
         const cleanedKey = key.trim();
 
         if (i === nameIndex && typeof row[i] === 'string') {
-          salaryDetails[cleanedKey] = row[i].trim().toLowerCase(); 
+          salaryDetails[cleanedKey] = row[i].trim().toLowerCase();
         } else {
           salaryDetails[cleanedKey] = typeof row[i] === 'number' ? Math.round(row[i]) : row[i];
         }
@@ -122,7 +124,7 @@ routesAdmin.post('/logout', (req, res) => {
   res.clearCookie('token'); // hoặc tên cookie chứa JWT bạn dùng
   res.redirect('/login');   // hoặc bất kỳ trang nào sau khi đăng xuất
 });
-routesAdmin.post('/admin/delete-salary',authMiddleware, requireAdmin, async (req, res) => {
+routesAdmin.post('/admin/delete-salary', authMiddleware, requireAdmin, async (req, res) => {
   const { month, year, batch } = req.body;
   try {
     await Salary.deleteMany({
@@ -136,5 +138,38 @@ routesAdmin.post('/admin/delete-salary',authMiddleware, requireAdmin, async (req
     res.redirect('/admin?message=Lỗi khi xóa bảng lương');
   }
 });
+
+routesAdmin.get('/m-account', authMiddleware, requireAdmin, async (req, res) => {
+  try {
+    const search = req.query.search || '';
+    const accounts = await Users.find({ username: { $regex: search, $options: 'i' } });
+    res.render('manager_account', { accounts, search });
+  } catch (error) {
+    res.json("lỗi hệ thống");
+    console.log(error)
+  }
+})
+
+routesAdmin.post('/m-account/add', authMiddleware, requireAdmin, async (req, res) => {
+  try {
+    const { code, password } = req.body;
+    const newAccount = new Users({ username: code, password });
+    await newAccount.save();
+    res.redirect('/m-account');
+  } catch (error) {
+    res.json("lỗi hệ thống");
+    console.log(error)
+  }
+})
+
+routesAdmin.post('/m-account/delete/:id', authMiddleware, requireAdmin, async (req, res) => {
+  try {
+    await Users.findByIdAndDelete(req.params.id);
+    res.redirect('/m-account');
+  } catch (error) {
+    res.json("lỗi hệ thống");
+    console.log(error)
+  }
+})
 
 export default routesAdmin;

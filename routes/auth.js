@@ -1,5 +1,5 @@
 import express from "express";
-import User from "../models/Users.js";
+import Users from "../models/Users.js";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 dotenv.config();
@@ -8,23 +8,23 @@ const router = express.Router();
 
 router.get('/login', (req, res) => {
   res.clearCookie('token');
-  res.render('login', { message: null });
+  res.render('login', { message: "Nếu bạn quên mật khẩu liện hệ quản lý của bạn" });
 });
 
 router.get('/register', (req, res) => {
   res.clearCookie('token');
-  res.render('register', { message: null });
+  res.render('register', { message: 'Lưu ý: mật khẩu chỉ được đặt một lần và sẽ không thể đổi' });
 });
 
 router.post('/register', async (req, res) => {
-  const { username,email,  password } = req.body;
+  const { username,  password } = req.body;
   try {
-    const existingUser = await User.findOne({ username });
+    const existingUser = await Users.findOne({ username });
     if (existingUser) {
       return res.render('register', { message: 'Username already exists' });
     }
 
-    const user = new User({ username, email, password });
+    const user = new Users({ username, password });
     await user.save();
 
     res.render('login', { message: 'Registration successful! Please login.' });
@@ -37,8 +37,8 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
   const { username, password } = req.body;
   try {
-    const user = await User.findOne({ username });
-    if (!user || !(await user.comparePassword(password))) {
+    const user = await Users.findOne({ username });
+    if (!user || !password) {
       return res.render('login', { message: 'Invalid username or password' });
     }
 
@@ -62,30 +62,6 @@ router.post('/login', async (req, res) => {
     res.render('login', { message: 'Error during login' });
   }
 });
-router.get('/forgot', (req, res) => {
-  res.render('forgot', { message: null });
-});
 
-router.post('/forgot', async (req, res) => {
-  const { username,email, newPassword } = req.body;
-
-  try {
-    const user = await User.findOne({ username });
-    
-    if (!user) {
-      return res.render('forgot', { message: "Không tìm thấy tên người dùng này." });
-    }
-    if (user.email !== email) {
-      res.render('forgot', { message: "bạn cần nhập đúng email đăng ký tài khoản" });
-    } 
-    user.password = newPassword;
-    await user.save();
-
-    res.redirect('/login');
-  } catch (error) {
-    console.error("❌ Lỗi khi reset mật khẩu:", error);
-    res.render('forgot', { message: "Lỗi hệ thống." });
-  }
-});
 
 export default router;
